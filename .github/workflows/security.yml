@@ -1,0 +1,57 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        extensions: curl, json, mysqli
+
+    - name: Check PHP syntax
+      run: |
+        find . -name "*.php" -type f ! -path "./vendor/*" -exec php -l {} \;
+
+    - name: Check for security issues
+      run: |
+        # Check for eval/exec usage
+        if grep -r "eval(" . --include="*.php" ! --path "./vendor/*"; then
+          echo "Found eval() usage - potential security risk"
+          exit 1
+        fi
+        
+        # Check for exec usage
+        if grep -r "exec(" . --include="*.php" ! --path "./vendor/*"; then
+          echo "Found exec() usage - potential security risk"
+          exit 1
+        fi
+        
+        # Check for shell_exec usage
+        if grep -r "shell_exec(" . --include="*.php" ! --path "./vendor/*"; then
+          echo "Found shell_exec() usage - potential security risk"
+          exit 1
+        fi
+
+    - name: Check for hardcoded secrets
+      run: |
+        if grep -r "token\|password\|secret\|key" . --include="*.php" ! --path "./vendor/*" | grep -E "(=\s*['\"]|password|api_key)"; then
+          echo "Warning: Potential hardcoded secrets found"
+        fi
+
+    - name: PHPCS Code Style Check
+      if: false  # Optional: Requires PHPCS setup
+      run: |
+        if command -v phpcs &> /dev/null; then
+          phpcs --standard=PSR2 includes/ assets/js/ --exclude=Generic.Files.LineLength
+        fi

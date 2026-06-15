@@ -1,0 +1,36 @@
+name: Security Report
+description: الإبلاغ عن ثغرة أمنية (خاص)
+title: "[SECURITY] "
+labels: ["security"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **تنبيه أمان مهم**: لا تكشف تفاصيل الثغرة علناً!
+        
+        استخدم GitHub Security Advisory بدلاً من ذلك:
+        https://github.com/engmuhammednasser/custom-currency-icon-for-woocommerce/security/advisories
+        
+        أو أرسل بريداً إلى: security@example.com
+
+  - type: input
+    id: title
+    attributes:
+      label: وصف الثغرة (مختصر)
+      placeholder: "[يرجى استخدام GitHub Security Advisory]"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: ملاحظة
+      value: |
+        شكراً على الاهتمام بأمان مشروعنا!
+        
+        يرجى الإبلاغ عن الثغرات الأمنية عبر:
+        1. GitHub Security Advisory (الأفضل): https://github.com/engmuhammednasser/custom-currency-icon-for-woocommerce/security/advisories
+        2. البريد الإلكتروني المأمون: security@example.com
+        
+        لا تنشر تفاصيل الثغرة علناً حتى يتم إصلاحها!

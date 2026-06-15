@@ -1,0 +1,60 @@
+/* Frontend CSS */
+
+/* Currency Icon Styling */
+.ccfw-currency-icon {
+	display: inline-block;
+	margin: 0 4px;
+	vertical-align: middle;
+	max-width: 100%;
+	height: auto;
+}
+
+/* Price display with currency icon */
+.woocommerce .price {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+/* Product page price */
+.woocommerce-product-details__short-description .price .ccfw-currency-icon,
+.woocommerce div.product .price .ccfw-currency-icon {
+	margin: 0 2px;
+}
+
+/* Cart and checkout prices */
+.woocommerce-cart table.shop_table .ccfw-currency-icon,
+.woocommerce-checkout .ccfw-currency-icon {
+	margin: 0 2px;
+	vertical-align: middle;
+}
+
+/* Order details */
+.woocommerce-order .woocommerce-order-details .ccfw-currency-icon,
+.woocommerce-MyAccount-orders .ccfw-currency-icon {
+	margin: 0 2px;
+	vertical-align: middle;
+}
+
+/* Currency name styling */
+.ccfw-currency-name {
+	font-size: 0.9em;
+	color: #666;
+	font-weight: normal;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.ccfw-currency-icon {
+		max-width: 90vw;
+		margin: 0 2px;
+	}
+}
+
+/* Print styles */
+@media print {
+	.ccfw-currency-icon {
+		margin: 0 2px;
+	}
+}
