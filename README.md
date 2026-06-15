@@ -233,7 +233,7 @@ ccfw_format_amount( 100, 'SAR' );
 
 **Muhammed Nasser**
 - GitHub: [@engmuhammednasser](https://github.com/engmuhammednasser)
-- Email: contact@example.com
+- Email: eng.mohamed_nasser@hotmail.com
 
 ---
 
