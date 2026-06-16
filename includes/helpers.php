@@ -143,9 +143,7 @@ function ccfw_get_currency_icon_html( $currency = '', $amount = null ) {
 	$align  = sanitize_text_field( $settings['alignment'] );
 
 	$style = sprintf(
-		'width: %dpx; height: %dpx; margin: 0 %dpx; vertical-align: %s; display: inline-block;',
-		$width,
-		$height,
+		'width: auto; height: 1.2em; margin: 0 %dpx; vertical-align: %s; display: inline-block;',
 		$margin,
 		$align
 	);
