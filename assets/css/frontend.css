@@ -1,13 +1,19 @@
 /* Frontend CSS */
 
 /* Currency Icon Styling */
-.ccfw-currency-icon {
-	display: inline-block;
-	margin: 0 4px;
-	vertical-align: middle;
+.ccfw-currency-icon,
+img.ccfw-currency-icon,
+.woocommerce ul.products li.product a img.ccfw-currency-icon,
+.woocommerce-page ul.products li.product a img.ccfw-currency-icon,
+.elementor-widget img.ccfw-currency-icon {
+	display: inline-block !important;
+	margin: 0 4px !important;
+	vertical-align: middle !important;
 	height: 1.2em !important; /* Scale dynamically with text */
 	width: auto !important;
 	max-width: none !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
 	box-shadow: none !important;
 }
 
