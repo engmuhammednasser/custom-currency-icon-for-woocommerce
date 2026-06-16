@@ -151,7 +151,7 @@ function ccfw_get_currency_icon_html( $currency = '', $amount = null ) {
 	$custom_class = ! empty( $settings['custom_class'] ) ? ' ' . sanitize_html_class( $settings['custom_class'] ) : '';
 
 	$html = sprintf(
-		'<img src="%s" alt="%s" class="ccfw-currency-icon%s" style="%s" />',
+		'<img src="%s" alt="%s" class="ccfw-currency-icon no-lazy%s" data-no-lazy="1" style="%s" />',
 		esc_url( $image['src'] ),
 		esc_attr( $image['alt'] ),
 		$custom_class,
