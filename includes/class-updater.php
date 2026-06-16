@@ -49,6 +49,39 @@ class Updater {
 		// Setup update hooks
 		add_filter( 'site_transient_update_plugins', array( $this, 'check_for_updates' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info_api' ), 10, 3 );
+		add_filter( 'plugin_row_meta', array( $this, 'add_plugin_row_meta' ), 10, 2 );
+
+		// Clear cache if manually requested
+		if ( isset( $_GET['ccfw_check_updates'] ) && $_GET['ccfw_check_updates'] === '1' ) {
+			add_action( 'admin_init', array( $this, 'clear_update_transient' ) );
+		}
+	}
+
+	/**
+	 * تفريغ الكاش الخاص بالتحديثات للتحقق اليدوي
+	 */
+	public function clear_update_transient() {
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			return;
+		}
+		delete_transient( 'ccfw_remote_version' );
+		delete_site_transient( 'update_plugins' );
+		wp_safe_redirect( admin_url( 'plugins.php' ) );
+		exit;
+	}
+
+	/**
+	 * إضافة رابط "التحقق من التحديثات" في صفحة الإضافات
+	 */
+	public function add_plugin_row_meta( $links, $file ) {
+		if ( plugin_basename( $this->plugin_file ) === $file ) {
+			$check_url = wp_nonce_url( admin_url( 'plugins.php?ccfw_check_updates=1' ) );
+			$row_meta = array(
+				'check_update' => '<a href="' . esc_url( $check_url ) . '">' . __( 'التحقق من التحديثات', CCFW_TEXT_DOMAIN ) . '</a>',
+			);
+			return array_merge( $links, $row_meta );
+		}
+		return $links;
 	}
 
 	/**
