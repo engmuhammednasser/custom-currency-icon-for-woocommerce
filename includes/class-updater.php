@@ -1,10 +1,8 @@
 <?php
 /**
  * Class Updater
- * معالجة التحديثات من GitHub
+ * معالجة التحديثات من GitHub بدون الحاجة لعمل Releases
  * 
- * استخدام Plugin Update Checker بطريقة آمنة بدون token
- *
  * @package CCFW
  */
 
@@ -17,32 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Updater {
 
-	/**
-	 * Plugin file path
-	 *
-	 * @var string
-	 */
 	private $plugin_file;
-
-	/**
-	 * GitHub repository URL
-	 *
-	 * @var string
-	 */
 	private $github_repo = 'https://github.com/engmuhammednasser/custom-currency-icon-for-woocommerce';
+	private $raw_plugin_file = 'https://raw.githubusercontent.com/engmuhammednasser/custom-currency-icon-for-woocommerce/main/custom-currency-icon-for-woocommerce.php';
 
-	/**
-	 * GitHub API URL
-	 *
-	 * @var string
-	 */
-	private $github_api = 'https://api.github.com/repos/engmuhammednasser/custom-currency-icon-for-woocommerce/releases/latest';
-
-	/**
-	 * Constructor
-	 *
-	 * @param string $plugin_file مسار ملف البلاجن الرئيسي
-	 */
 	public function __construct( $plugin_file ) {
 		$this->plugin_file = $plugin_file;
 
@@ -51,6 +27,7 @@ class Updater {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_updates' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info_api' ), 10, 3 );
 		add_filter( 'plugin_row_meta', array( $this, 'add_plugin_row_meta' ), 10, 2 );
+		add_filter( 'upgrader_source_selection', array( $this, 'rename_github_zip' ), 10, 3 );
 
 		// Clear cache if manually requested
 		if ( isset( $_GET['ccfw_check_updates'] ) && $_GET['ccfw_check_updates'] === '1' ) {
@@ -58,9 +35,6 @@ class Updater {
 		}
 	}
 
-	/**
-	 * تفريغ الكاش الخاص بالتحديثات للتحقق اليدوي
-	 */
 	public function clear_update_transient() {
 		if ( ! current_user_can( 'update_plugins' ) ) {
 			return;
@@ -71,9 +45,6 @@ class Updater {
 		exit;
 	}
 
-	/**
-	 * إضافة رابط "التحقق من التحديثات" في صفحة الإضافات
-	 */
 	public function add_plugin_row_meta( $links, $file ) {
 		if ( plugin_basename( $this->plugin_file ) === $file ) {
 			$check_url = wp_nonce_url( admin_url( 'plugins.php?ccfw_check_updates=1' ) );
@@ -85,26 +56,17 @@ class Updater {
 		return $links;
 	}
 
-	/**
-	 * فحص التحديثات من GitHub
-	 *
-	 * @param object $transient بيانات التحديثات
-	 * @return object
-	 */
 	public function check_for_updates( $transient ) {
-		// تجاهل إذا لم تكن هناك بيانات
 		if ( empty( $transient->checked ) ) {
 			return $transient;
 		}
 
-		// الحصول على آخر إصدار من GitHub
 		$remote_version = $this->get_remote_version();
 
 		if ( ! $remote_version ) {
 			return $transient;
 		}
 
-		// مقارنة الإصدارات
 		$current_version = CCFW_VERSION;
 
 		if ( version_compare( $remote_version, $current_version, '>' ) ) {
@@ -116,20 +78,10 @@ class Updater {
 			$obj->tested        = '6.0';
 			$obj->requires      = CCFW_MIN_WP_VERSION;
 			$obj->requires_php  = CCFW_MIN_PHP_VERSION;
-			$obj->package       = $this->get_download_url( $remote_version );
+			$obj->package       = $this->get_download_url();
 			$obj->url           = $this->github_repo;
 			$obj->author        = 'Muhammed Nasser';
 			$obj->homepage      = $this->github_repo;
-
-			// جلب بيانات الإصدار من GitHub
-			$release_info = $this->get_release_info( $remote_version );
-
-			if ( $release_info ) {
-				$obj->sections = array(
-					'description' => $release_info['description'] ?? '',
-					'changelog'   => $release_info['changelog'] ?? '',
-				);
-			}
 
 			$transient->response[ plugin_basename( $this->plugin_file ) ] = $obj;
 		}
@@ -137,25 +89,15 @@ class Updater {
 		return $transient;
 	}
 
-	/**
-	 * معالجة استدعاءات API لمعلومات البلاجن
-	 *
-	 * @param false  $result النتيجة الافتراضية
-	 * @param string $action نوع الإجراء
-	 * @param object $args المعاملات
-	 * @return object|false
-	 */
 	public function plugin_info_api( $result, $action, $args ) {
-		// تجاهل إذا لم يكن هذا البلاجن
 		if ( 'plugin_information' !== $action ) {
 			return $result;
 		}
 
-		if ( plugin_basename( $this->plugin_file ) !== $args->slug ) {
+		if ( plugin_basename( $this->plugin_file ) !== $args->slug && dirname( plugin_basename( $this->plugin_file ) ) !== $args->slug ) {
 			return $result;
 		}
 
-		// الحصول على معلومات البلاجن من GitHub
 		$remote_version = $this->get_remote_version();
 
 		if ( ! $remote_version ) {
@@ -165,38 +107,25 @@ class Updater {
 		$obj = new \stdClass();
 
 		$obj->name             = __( 'Custom Currency Icon for WooCommerce', CCFW_TEXT_DOMAIN );
-		$obj->slug             = plugin_basename( $this->plugin_file );
+		$obj->slug             = dirname( plugin_basename( $this->plugin_file ) );
 		$obj->version          = $remote_version;
 		$obj->tested           = '6.0';
 		$obj->requires         = CCFW_MIN_WP_VERSION;
 		$obj->requires_php     = CCFW_MIN_PHP_VERSION;
-		$obj->download_link    = $this->get_download_url( $remote_version );
+		$obj->download_link    = $this->get_download_url();
 		$obj->author           = '<a href="https://github.com/engmuhammednasser">Muhammed Nasser</a>';
 		$obj->homepage         = $this->github_repo;
 		$obj->plugin_name      = __( 'Custom Currency Icon for WooCommerce', CCFW_TEXT_DOMAIN );
 		$obj->description      = __( 'عرض أيقونة مخصصة للعملة بدلاً من الرمز النصي العادي في متجر WooCommerce', CCFW_TEXT_DOMAIN );
-		$obj->requires_plugins = array( 'woocommerce/woocommerce.php' );
-
-		// جلب بيانات الإصدار من GitHub
-		$release_info = $this->get_release_info( $remote_version );
-
-		if ( $release_info ) {
-			$obj->sections = array(
-				'description' => $release_info['description'] ?? __( 'عرض أيقونة مخصصة للعملة بدلاً من الرمز النصي العادي في متجر WooCommerce', CCFW_TEXT_DOMAIN ),
-				'changelog'   => $release_info['changelog'] ?? __( 'تحديث جديد', CCFW_TEXT_DOMAIN ),
-			);
-		}
+		$obj->sections         = array(
+			'description' => __( 'تم جلب هذا التحديث مباشرة من GitHub (فرع main).', CCFW_TEXT_DOMAIN ),
+			'changelog'   => __( 'يرجى مراجعة GitHub لمعرفة التحديثات الجديدة.', CCFW_TEXT_DOMAIN ),
+		);
 
 		return $obj;
 	}
 
-	/**
-	 * الحصول على آخر إصدار من GitHub
-	 *
-	 * @return string|false
-	 */
 	private function get_remote_version() {
-		// استخدام cache transient
 		$transient_key = 'ccfw_remote_version';
 		$cached_version = get_transient( $transient_key );
 
@@ -204,11 +133,9 @@ class Updater {
 			return $cached_version;
 		}
 
-		// الحصول على آخر إصدار من GitHub API
-		$response = wp_remote_get( $this->github_api, array(
+		$response = wp_remote_get( $this->raw_plugin_file, array(
 			'timeout'    => 10,
-			'sslverify'  => true,
-			'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ),
+			'sslverify'  => false, // Avoid local SSL issues
 		) );
 
 		if ( is_wp_error( $response ) ) {
@@ -216,73 +143,31 @@ class Updater {
 		}
 
 		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( empty( $data['tag_name'] ) ) {
-			return false;
+		
+		if ( preg_match( '/^[ \t\/*#@]*Version:\s*(.*)$/im', $body, $matches ) ) {
+			$version = trim( $matches[1] );
+			set_transient( $transient_key, $version, 12 * HOUR_IN_SECONDS );
+			return $version;
 		}
 
-		$version = str_replace( 'v', '', $data['tag_name'] );
-
-		// Cache for 12 hours
-		set_transient( $transient_key, $version, 12 * HOUR_IN_SECONDS );
-
-		return $version;
+		return false;
 	}
 
-	/**
-	 * جلب بيانات الإصدار من GitHub
-	 *
-	 * @param string $version رقم الإصدار
-	 * @return array|false
-	 */
-	private function get_release_info( $version ) {
-		$transient_key = 'ccfw_release_info_' . $version;
-		$cached_info   = get_transient( $transient_key );
-
-		if ( false !== $cached_info && ! empty( $cached_info ) ) {
-			return $cached_info;
-		}
-
-		$response = wp_remote_get( $this->github_api, array(
-			'timeout'    => 10,
-			'sslverify'  => true,
-			'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ),
-		) );
-
-		if ( is_wp_error( $response ) ) {
-			return false;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( empty( $data ) ) {
-			return false;
-		}
-
-		$info = array(
-			'description' => wp_kses_post( $data['body'] ?? '' ),
-			'changelog'   => wp_kses_post( $data['body'] ?? '' ),
-		);
-
-		// Cache for 12 hours
-		set_transient( $transient_key, $info, 12 * HOUR_IN_SECONDS );
-
-		return $info;
+	private function get_download_url() {
+		return 'https://github.com/engmuhammednasser/custom-currency-icon-for-woocommerce/archive/refs/heads/main.zip';
 	}
 
-	/**
-	 * الحصول على رابط التحميل من GitHub Releases
-	 *
-	 * @param string $version رقم الإصدار
-	 * @return string
-	 */
-	private function get_download_url( $version ) {
-		// رابط التحميل من GitHub
-		return sprintf(
-			'https://github.com/engmuhammednasser/custom-currency-icon-for-woocommerce/archive/refs/tags/v%s.zip',
-			esc_attr( $version )
-		);
+	public function rename_github_zip( $source, $remote_source, $upgrader ) {
+		global $wp_filesystem;
+
+		$plugin_slug = dirname( plugin_basename( $this->plugin_file ) );
+
+		if ( strpos( $source, $plugin_slug . '-main' ) !== false ) {
+			$corrected_source = trailingslashit( $remote_source ) . $plugin_slug . '/';
+			if ( $wp_filesystem->move( $source, $corrected_source, true ) ) {
+				return $corrected_source;
+			}
+		}
+		return $source;
 	}
 }
