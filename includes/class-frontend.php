@@ -51,6 +51,121 @@ class Frontend {
 
 		// Order details page
 		add_filter( 'woocommerce_order_item_subtotal_html', array( $this, 'add_currency_icon_to_order_item_total' ), 10, 2 );
+
+		// Aggressive JS replacement for live environments where hooks might be overridden
+		add_action( 'wp_footer', array( $this, 'enqueue_currency_svg_replacement_js' ), 100 );
+	}
+
+	/**
+	 * إضافة سكريبت استبدال الرمز في الواجهة لضمان تطبيق الأيقونة على كل الأسعار
+	 */
+	public function enqueue_currency_svg_replacement_js() {
+		if ( ! ccfw_is_enabled() || ! function_exists('is_admin') || is_admin() ) {
+			return;
+		}
+
+		$currency = get_woocommerce_currency();
+		$icon_html = ccfw_get_currency_icon_html( $currency );
+		
+		if ( empty( $icon_html ) ) {
+			return;
+		}
+
+		$raw_symbol = get_woocommerce_currency_symbol( $currency );
+		?>
+		<script id="ccfw-currency-replacement-js">
+			(function() {
+				const currencySymbol = '<?php echo esc_js( html_entity_decode( $raw_symbol ) ); ?>';
+				const sarSymbol = 'ر.س'; // Hardcoded fallback for SAR if theme forces it
+				const iconHtml = '<?php echo wp_kses_post( $icon_html ); ?>';
+				
+				function replaceCurrencySymbols() {
+					const priceSelectors = [
+						'.woocommerce-Price-amount',
+						'.amount',
+						'span.price',
+						'p.price'
+					];
+					
+					let replacedCount = 0;
+					
+					priceSelectors.forEach(function(selector) {
+						const elements = document.querySelectorAll(selector);
+						
+						elements.forEach(function(element) {
+							// Skip if already processed
+							if (element.hasAttribute('data-ccfw-processed') || element.querySelector('.ccfw-currency-icon')) {
+								return;
+							}
+							
+							let html = element.innerHTML;
+							let originalHtml = html;
+							
+							if (html.includes(currencySymbol) || html.includes(sarSymbol) || html.includes('woocommerce-Price-currencySymbol')) {
+								
+								// 1. Remove standard woocommerce span if exists, replace with icon
+								if (html.includes('woocommerce-Price-currencySymbol')) {
+									html = html.replace(/<span class="woocommerce-Price-currencySymbol">.*?<\/span>/g, iconHtml);
+								}
+								
+								// 2. Replace raw symbols if they still exist outside of the span
+								if (currencySymbol && html.includes(currencySymbol)) {
+									html = html.split(currencySymbol).join(iconHtml);
+								}
+								if (html.includes(sarSymbol)) {
+									html = html.split(sarSymbol).join(iconHtml);
+								}
+								
+								if (html !== originalHtml) {
+									element.innerHTML = html;
+									element.setAttribute('data-ccfw-processed', 'true');
+									replacedCount++;
+								}
+							}
+						});
+					});
+				}
+				
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', replaceCurrencySymbols);
+				} else {
+					replaceCurrencySymbols();
+				}
+				
+				setTimeout(replaceCurrencySymbols, 500);
+				setTimeout(replaceCurrencySymbols, 1000);
+				
+				if (typeof jQuery !== 'undefined') {
+					jQuery(document.body).on('updated_cart_totals updated_checkout wc_fragments_refreshed wc_fragments_loaded', function() {
+						setTimeout(replaceCurrencySymbols, 100);
+					});
+					
+					jQuery('.variations_form').on('found_variation reset_data', function() {
+						setTimeout(replaceCurrencySymbols, 100);
+					});
+				}
+				
+				const observer = new MutationObserver(function(mutations) {
+					let shouldReplace = false;
+					mutations.forEach(function(mutation) {
+						mutation.addedNodes.forEach(function(node) {
+							if (node.nodeType === 1) {
+								shouldReplace = true;
+							}
+						});
+					});
+					if (shouldReplace) {
+						setTimeout(replaceCurrencySymbols, 50);
+					}
+				});
+				
+				observer.observe(document.body, {
+					childList: true,
+					subtree: true
+				});
+			})();
+		</script>
+		<?php
 	}
 
 	/**
