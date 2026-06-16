@@ -3,7 +3,7 @@
  * Plugin Name: Custom Currency Icon for WooCommerce
  * Plugin URI: https://github.com/engmuhammednasser/custom-currency-icon-for-woocommerce
  * Description: أداة احترافية لمتجر WooCommerce تتيح استبدال الرمز النصي للعملات بأيقونات وصور مخصصة مع تحكم شامل في أماكن الظهور، طرق العرض، ودعم للتحديثات التلقائية من GitHub.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Requires at least: 5.0
  * Requires PHP: 7.4
  * Author: Muhammed Nasser
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CCFW_VERSION', '1.1.4' );
+define( 'CCFW_VERSION', '1.1.5' );
 define( 'CCFW_PLUGIN_FILE', __FILE__ );
 define( 'CCFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CCFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
