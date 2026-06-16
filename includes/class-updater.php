@@ -48,6 +48,7 @@ class Updater {
 
 		// Setup update hooks
 		add_filter( 'site_transient_update_plugins', array( $this, 'check_for_updates' ) );
+		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_updates' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info_api' ), 10, 3 );
 		add_filter( 'plugin_row_meta', array( $this, 'add_plugin_row_meta' ), 10, 2 );
 
@@ -109,7 +110,7 @@ class Updater {
 		if ( version_compare( $remote_version, $current_version, '>' ) ) {
 			$obj = new \stdClass();
 
-			$obj->slug          = plugin_basename( $this->plugin_file );
+			$obj->slug          = dirname( plugin_basename( $this->plugin_file ) );
 			$obj->plugin        = plugin_basename( $this->plugin_file );
 			$obj->new_version   = $remote_version;
 			$obj->tested        = '6.0';

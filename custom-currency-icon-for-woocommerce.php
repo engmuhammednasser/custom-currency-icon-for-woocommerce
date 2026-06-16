@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CCFW_VERSION', '1.0.2' );
+define( 'CCFW_VERSION', '1.1.2' );
 define( 'CCFW_PLUGIN_FILE', __FILE__ );
 define( 'CCFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CCFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
